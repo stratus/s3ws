@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<body style="margin: 0 0 0 0;">
+<head><title>S3WS</title></head>
+<h1 style="background-color: black; color: white; margin: 0 0 0 0">S3WS</h1>
+<table border="0" style="font-size: 14pt" cellspacing="20">
+<tr>
+<th>Name</th>
+<th>Size (bytes)</th>
+</tr>
+{{if $self := .}}
+{{range .Entries}}
+<tr>
+<td><a href="{{$self.Scheme}}{{$self.IP}}:{{$self.Port}}/{{$self.URI}}/{{.Name}}">{{.Name}}</a></td>
+<td>{{.Size}}</td>
+</tr>
+{{end}}
+{{end}}
+</table>
+<br/><br/>
+<a href=javascript:window.history.back()>Back</a><br/>
+</body>
+</html>

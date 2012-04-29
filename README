@@ -1,0 +1,10 @@
+sws is stratus super simple webserver.
+
+Features:
+* Directory listing.
+* File Download and streaming via http.ServeFile.
+
+How to use
+
+$ go run sws.go <path_to_serve>
+
