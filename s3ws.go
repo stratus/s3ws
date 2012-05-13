@@ -6,6 +6,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -16,6 +17,8 @@ import (
 	"strings"
 )
 
+import _ "net/http/pprof"
+
 type Directory struct {
 	Scheme  string
 	IP      string
@@ -24,19 +27,22 @@ type Directory struct {
 	Entries []os.FileInfo
 }
 
-var documentRoot = ""
-var ip = ""
-var ssswsIdentifier = "S3WS 0.1/Beta"
+const ssswsIdentifier = "S3WS 0.2/Beta"
 
-var port = flag.String("port", "8080", "port")
+var documentroot = flag.String("documentroot", "", "path to serve")
+var ip = ""
 var iface = flag.String("iface", "eth0", "network interface")
+var port = flag.String("port", "8080", "port")
 
 func IpByName(iface string) (string, error) {
 	ifi, err := net.InterfaceByName(iface)
+	addrs, err := ifi.Addrs()
 	if err != nil {
 		return "", err
 	}
-	addrs, err := ifi.Addrs()
+	if len(addrs) == 0 {
+		return "", fmt.Errorf("Error parsing ip address of %s interface.", iface)
+	}
 	ip = strings.Split(addrs[0].String(), "/")[0]
 	return ip, err
 }
@@ -48,7 +54,7 @@ func Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("HTTP GET %s", r.URL.Path)
-	servingPath := path.Join(documentRoot, r.URL.Path[1:])
+	servingPath := path.Join(*documentroot, r.URL.Path[1:])
 	entries, err := ioutil.ReadDir(servingPath)
 	if err != nil {
 		log.Println(err)
@@ -62,16 +68,16 @@ func Serve(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	flag.Parse()
-	if len(flag.Args()) != 1 {
-		log.Fatal("Usage: s3ws [--port=<port>] [--iface=<interface>] DOCUMENTROOT")
+	if *documentroot == "" {
+		log.Fatal("Usage: s3ws --documentroot <documentroot> [--port=<port>] " +
+			"[--iface=<interface>]")
 	}
-	documentRoot = flag.Arg(0)
 	http.HandleFunc("/", Serve)
 	ip, err := IpByName(*iface)
 	if err != nil {
 		log.Fatal("IpByName: ", err)
 	}
-	log.Printf("Serving %s from %s:%s", documentRoot, ip, *port)
+	log.Printf("Serving %s from %s:%s", *documentroot, ip, *port)
 	err = http.ListenAndServe(ip+":"+*port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
